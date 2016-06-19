@@ -149,6 +149,7 @@
     <ClCompile Include="OpenGlErrorHandling.cpp" />
     <ClCompile Include="PrimitiveGeneration.cpp" />
     <ClCompile Include="RandomColor.cpp" />
+    <ClCompile Include="Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shader.frag" />
@@ -160,6 +161,7 @@
     <ClInclude Include="OpenGlErrorHandling.h" />
     <ClInclude Include="PrimitiveGeneration.h" />
     <ClInclude Include="RandomColor.h" />
+    <ClInclude Include="Texture.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

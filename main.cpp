@@ -37,6 +37,7 @@
 #include "GenerateShader.h"
 #include "GeometryData.h"
 #include "PrimitiveGeneration.h"
+#include "Texture.h"
 
 // for moving the shapes around in window space
 #include "glm/gtc/matrix_transform.hpp"
@@ -46,7 +47,9 @@ GLuint gProgramId;
 GeometryData gTriangle;
 GeometryData gBox;
 GeometryData gCircle;
-GLint gUniformLocation;
+GLuint gTextureId;
+GLint gUnifMatrixTransform;
+GLint gUnifTextureSampler;
 
 
 void Init()
@@ -61,15 +64,18 @@ void Init()
     glDepthRange(0.0f, 1.0f);
 
     gProgramId = GenerateShaderProgram();
-    gUniformLocation = glGetUniformLocation(gProgramId, "translateMatrixWindowSpace");
+    gUnifMatrixTransform = glGetUniformLocation(gProgramId, "translateMatrixWindowSpace");
+    gUnifTextureSampler = glGetUniformLocation(gProgramId, "tex");
 
     GenerateTriangle(&gTriangle);
 
     GenerateBox(&gBox);
     GenerateCircle(&gCircle);
     InitializeGeometry(gProgramId, &gTriangle);
-    InitializeGeometry(gProgramId, &gBox);
-    InitializeGeometry(gProgramId, &gCircle);
+    //InitializeGeometry(gProgramId, &gBox);
+    //InitializeGeometry(gProgramId, &gCircle);
+
+    gTextureId = CreateTexture();
 }
 
 //Called to update the display.
@@ -89,21 +95,24 @@ void Display()
     // Note: Remember that this program is "barebones", so translation must be in window space 
     // ([-1,+1] on X and Y).
     translateMatrix = glm::translate(glm::mat4(), glm::vec3(+0.3f, +0.3f, 0.0f));
-    glUniformMatrix4fv(gUniformLocation, 1, GL_FALSE, glm::value_ptr(translateMatrix));
+    glUniformMatrix4fv(gUnifMatrixTransform, 1, GL_FALSE, glm::value_ptr(translateMatrix));
+    glUniform1i(gUnifTextureSampler, 0);
     glBindVertexArray(gTriangle._vaoId);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, gTextureId);
     glDrawElements(gTriangle._drawStyle, gTriangle._indices.size(), GL_UNSIGNED_SHORT, 0);
 
-    // put the box up and to the left
-    translateMatrix = glm::translate(glm::mat4(), glm::vec3(-0.3f, +0.3f, 0.0f));
-    glUniformMatrix4fv(gUniformLocation, 1, GL_FALSE, glm::value_ptr(translateMatrix));
-    glBindVertexArray(gBox._vaoId);
-    glDrawElements(gBox._drawStyle, gBox._indices.size(), GL_UNSIGNED_SHORT, 0);
+    //// put the box up and to the left
+    //translateMatrix = glm::translate(glm::mat4(), glm::vec3(-0.3f, +0.3f, 0.0f));
+    //glUniformMatrix4fv(gUniformLocation, 1, GL_FALSE, glm::value_ptr(translateMatrix));
+    //glBindVertexArray(gBox._vaoId);
+    //glDrawElements(gBox._drawStyle, gBox._indices.size(), GL_UNSIGNED_SHORT, 0);
 
-    // put the circle down and center
-    translateMatrix = glm::translate(glm::mat4(), glm::vec3(0.0f, -0.3f, 0.0f));
-    glUniformMatrix4fv(gUniformLocation, 1, GL_FALSE, glm::value_ptr(translateMatrix));
-    glBindVertexArray(gCircle._vaoId);
-    glDrawElements(gCircle._drawStyle, gCircle._indices.size(), GL_UNSIGNED_SHORT, 0);
+    //// put the circle down and center
+    //translateMatrix = glm::translate(glm::mat4(), glm::vec3(0.0f, -0.3f, 0.0f));
+    //glUniformMatrix4fv(gUniformLocation, 1, GL_FALSE, glm::value_ptr(translateMatrix));
+    //glBindVertexArray(gCircle._vaoId);
+    //glDrawElements(gCircle._drawStyle, gCircle._indices.size(), GL_UNSIGNED_SHORT, 0);
 
     glUseProgram(0);
 

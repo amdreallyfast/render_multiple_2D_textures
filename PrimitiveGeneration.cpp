@@ -12,13 +12,13 @@ void GenerateTriangle(GeometryData *putDataHere)
     MyVertex localVerts[] =
     {
         glm::vec2(-0.25f, -0.25f),      // left bottom corner
-        glm::vec3(+1.0f, +0.0f, +0.0f), // red
+        glm::vec2(+0.0f, +0.0f),        // texel at bottom left of texture
 
         glm::vec2(+0.25f, -0.25f),      // right bottom corner
-        glm::vec3(+0.0f, +1.0f, +0.0f), // green
+        glm::vec2(+1.0f, +0.0f),        // texel at bottom right of texture
 
         glm::vec2(+0.0f, +0.25f),       // center top
-        glm::vec3(+0.0f, +0.0f, +1.0f), // blue
+        glm::vec2(+0.5f, +1.0f),        // texel at top center of texture
     };
 
     unsigned int numVerts = sizeof(localVerts) / sizeof(MyVertex);
@@ -49,16 +49,16 @@ void GenerateBox(GeometryData *putDataHere)
     MyVertex localVerts[] =
     {
         glm::vec2(-0.25f, -0.25f),      // left bottom corner
-        glm::vec3(+1.0f, +0.0f, +0.0f), // red
+        glm::vec2(+0.0f, +0.0f),        // texel at bottom left of texture
 
         glm::vec2(+0.25f, -0.25f),      // right bottom corner
-        glm::vec3(+0.0f, +1.0f, +0.0f), // green
+        glm::vec2(+1.0f, +0.0f),        // texel at bottom right of texture
 
         glm::vec2(+0.25f, +0.25f),      // right top
-        glm::vec3(+0.0f, +0.0f, +1.0f), // blue
+        glm::vec2(+1.0f, +1.0f),        // texel at top right of texture
 
         glm::vec2(-0.25f, +0.25f),      // left top
-        glm::vec3(+0.0f, +1.0f, +0.0f), // green
+        glm::vec2(+0.0f, +1.0f),        // texel at top left of texture
     };
 
     unsigned int numVerts = sizeof(localVerts) / sizeof(MyVertex);
@@ -98,7 +98,7 @@ void GenerateCircle(GeometryData *putDataHere)
     {
         MyVertex v;
         v._position = glm::vec2(x, y);
-        v._color = RandomColor();
+        //v._color = RandomColor();
         putDataHere->_verts.push_back(v);
 
         float tx = (-y) * tangetialFactor;
@@ -160,11 +160,11 @@ void InitializeGeometry(GLuint programId, GeometryData *initThis)
         strideSizeBytes, (void *)vertexBufferStartOffset);
 
     // color
-    // Note: Like for position, hard code the number of floats (3 for vec3).
+    // Note: Like for position, hard code the number of floats (2 for vec2).
     vertexAttribArrayIndex++;
     vertexBufferStartOffset += sizeof(initThis->_verts[0]._position);
     glEnableVertexAttribArray(vertexAttribArrayIndex);
-    glVertexAttribPointer(vertexAttribArrayIndex, 3, GL_FLOAT, GL_FALSE, 
+    glVertexAttribPointer(vertexAttribArrayIndex, 2, GL_FLOAT, GL_FALSE, 
         strideSizeBytes, (void *)vertexBufferStartOffset);
 
     // indices buffer

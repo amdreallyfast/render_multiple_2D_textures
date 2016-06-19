@@ -7,7 +7,7 @@
 struct MyVertex
 {
     glm::vec2 _position;
-    glm::vec3 _color;
+    glm::vec2 _texturePosition;
 };
 
 struct GeometryData
