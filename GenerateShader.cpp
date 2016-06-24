@@ -7,6 +7,17 @@
 #include <fstream>
 #include <sstream>
 
+/*-----------------------------------------------------------------------------------------------
+Description:
+    Encapsulates the creation of an OpenGL GPU program, including the compilation and linking of
+    shaders.  It tries to cover all the basics and the error reporting and is as self-contained
+    as possible, only returning a program ID when it is finished.
+Parameters: None
+Returns:
+    The OpenGL ID of the GPU program.
+Exception:  Safe
+Creator:    John Cox (2-13-2016)
+-----------------------------------------------------------------------------------------------*/
 unsigned int GenerateShaderProgram()
 {
     // hard-coded ignoring possible errors like a boss

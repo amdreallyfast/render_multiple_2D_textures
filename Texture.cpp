@@ -21,21 +21,23 @@ struct texel
     GLfloat a;  // alpha
 };
 
-// Note: I'd prefer to use a std container as an argument to my "generate texture" function
-// like std::vector<...>, which slaps the user if an index goes out of bounds while a basic 
-// C-style array simply swallows the error, but I cannot pass either a std::vector<...> or a 
-// std::array<...> by non-const reference or by address.  Attempting to pass by address gives
-// the error, "argument of type "std::vector<texel, std::allocator<texel>> *" is incompatible
-// with parameter of type "std::vector<texel, std::allocator<texel>> *".  I want to say 
-// "you idiot" but I know it is simply a compiler and I hit a silly corner case.
-// Also Note: Interestingly, putting that value into a typedef makes the compiler happy.
-struct StopBeingDumb
-{
-    std::vector<texel> _allTheTexels;
-};
+/*-----------------------------------------------------------------------------------------------
+Description:
+    Encapsulates the generation of texture values so that the CreateTexture() function can focus 
+    on the OpenGL texture info.
 
-// encapsulates the generation of texture values so that the CreateTexture() function can focus
-// on the OpenGL texture info
+    Creates three horizontal beams of random color (think of a three-stripe flag).  These are
+    sufficient for a barebones demo.
+Parameters: 
+    putDataHere     Self-explanatory.  Is a pointer because that is my style of indicating 
+                    "will be changed".
+    maxTexelRows    Self-explanatory.
+    texelsPerRow    A texture is a rectangle, and I thought this was more descriptive than 
+                    "columns".
+Returns:    None
+Exception:  Safe
+Creator:    John Cox (6-19-2016)
+-----------------------------------------------------------------------------------------------*/
 static void GenerateThreeBeamTexture(std::vector<texel> *putDataHere,
     const unsigned int maxTexelRows, const unsigned int texelsPerRow)
 {
@@ -92,14 +94,23 @@ static void GenerateThreeBeamTexture(std::vector<texel> *putDataHere,
 
 /*-----------------------------------------------------------------------------------------------
 Description:
-    Encapsulates the creation of a texture.  It tries to cover all the basics and be as self-
-    contained as possible, only returning a texture ID when it is finished.
+    Encapsulates the creation of a texture (not the texture parameters; 
+    see CreateGenericSampler()).  
+    
+    These are the basics:
+    - Generate a texture ID
+    - Binds it (the active texture unit is irrelevant here; whatever texture unit is current set 
+        gets run over by this binding, butthe association of a texture unit with a texture is a 
+        render time thing, so don't worry about the run over)
+    - Generate the data for a 2D texture (in this case, three random color horizontal bars)
+    - Load the data into the texture object buffer for the texture ID
+    - Returns that texture ID.
 
     Note: There are two options for telling OpenGL the texture parameters:
     (1) Bind a texture with glBindTexture(...) and using glTexParameteri(...).  This tells OpenGL
     to use those texture parameters for whatever texture is in use.
-    (2) Create a texture sampler, bind the sampler, use glSamplerParameteri(...), and then set up
-    those same samplers again when drawing objects that use that sampler.
+    (2) Create a texture sampler, use glSamplerParameteri(...), and then associate a texture and 
+    texture sampler with the same texture unit at draw time.  
 
     This tutorial uses the latter approach.  Approach (1) needs to be set whenever the currently
     bound texture needs a different setup than the texture that came before it.  Approach (2) is
@@ -108,107 +119,30 @@ Description:
     
     In this way, texture samplers are unlike VAOs, whose vertex array attributes are associated 
     with whatever array buffer ID was bound at the time that those attributes were set up.  While
-    maybe seeming like a bit of a hassle, 
-
-
-    ????
+    maybe seeming like a bit of a hassle, this is the only way that multiple textures with 
+    different parameters can be used at the same time.
     
 Parameters: None
 Returns:
-The OpenGL ID of the texture that was created.
+    The OpenGL ID of the texture that was created.
 Exception:  Safe
-Creator:
-John Cox (2-24-2016)
+Creator:    John Cox (6-24-2016)
 -----------------------------------------------------------------------------------------------*/
-GLuint CreateTexture()
+GLuint CreateRandom3BeamTexture()
 {
     // create a 2D texture buffer
     GLuint textureId;
     glGenTextures(1, &textureId);
-
-    // bind the generated texture (it's a buffer, but I'll keep calling it "texture") to the 
-    // OpenGL texture unit 0
-    // Note: This is default behavior, which is perhaps why many tutorials skip it, but this 
-    // program is for posterity, so I am trying to be thorough.
-    //??why does making a mismatch between the one in here and the one in display() not cause a 
-    // problem??
-    glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, textureId);
-
-    // these are some kind of standard texture settings for how to magnify it (detail when 
-    // zooming in), "minify" it (detail when zooming out), and set tiling.
-    // Note: I don't know how these work or what they do in detail, but they seem to be common
-    // in a few texture tutorials.
-    //??why wouldn't the program work at all without the "min filter"? it'll work without the
-    // other glTexParameteri(...) settings, but not without the "min filter"??
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);   // "S" is texture X axis
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);   // "T" is texture Y axis
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);   // "zoom in"
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);   // "zoom out"
-
-    
-    //??do this? http://www.gamedev.net/page/resources/_/technical/opengl/opengl-texture-mapping-an-introduction-r947??)
-    //glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-
-    //// 
-    //// I have decided that I will create a 2D texture of RGB values.  The fragment shader's idea 
-    //// of color is 0.0-1.0, so I will make each color channel (R, G, or B) as a float.  Other 
-    //// format options are available if someone wants to get very specific about how they store 
-    //// their texture data (ex: GL_RGBA32F is RGBA (RGB + alpha channel) with 32bits per channel,
-    //// which might come in handy if the programmer was concerned that a user's "float" might not
-    //// be 32bits), but for this demo, I will keep things relatively simple.
-    //struct texel
-    //{
-    //    // do NOT define any methods or else the texel construction loop will have to change
-    //    //texel() {}
-    //    GLfloat r;
-    //    GLfloat g;
-    //    GLfloat b;
-    //    GLfloat a;  // alpha
-    //};
 
     // glTexImage2D(...) will take a pointer to the data, but not a pointer to pointer, so 2D
     // arrays are not an option and the 2D texture data must be crammed into a 1D array
     const unsigned int MAX_TEXEL_ROWS = 64;
     const unsigned int TEXELS_PER_ROW = 64;
     std::vector<texel> crude2DTextureIn1D;
-    //crude2DTextureIn1D._allTheTexels.resize(MAX_TEXEL_ROWS * TEXELS_PER_ROW);
     GenerateThreeBeamTexture(&crude2DTextureIn1D, MAX_TEXEL_ROWS, TEXELS_PER_ROW);
-    //for (size_t rowCounter = 0; rowCounter < MAX_TEXEL_ROWS; rowCounter++)
-    //{
-    //    for (size_t colCounter = 0; colCounter < TEXELS_PER_ROW; colCounter++)
-    //    {
-    //        // for the sake of this demo, the bottom third will be red, the middle third green, 
-    //        // and the top third blue.
 
-    //        // this array-style assignment is only possible when the struct has no methods 
-    //        // Note: Even a constructor that takes nothing and does nothing will prevent this.
-    //        texel t = { 0.0f, 0.0f, 0.0f, 0.0f };
-    //        if (rowCounter < (MAX_TEXEL_ROWS / 3))
-    //        {
-    //            // bottom third, so red
-    //            t = { 1.0f, 0.0f, 0.0f, 1.0f };
-    //        }
-    //        else if (rowCounter < ((2 * MAX_TEXEL_ROWS) / 3))
-    //        {
-    //            // middle third, so green
-    //            t = { 0.0f, 1.0f, 0.0f, 1.0f };
-    //        }
-    //        else
-    //        {
-    //            // top third, so blue
-    //            t = { 0.0f, 0.0f, 1.0f, 1.0f };
-    //        }
-
-    //        // jam the data into the array
-    //        crudeTextureArr[(rowCounter * TEXELS_PER_ROW) + colCounter] = t;
-    //    }
-    //}
-
-    // ??when to use this??
-    //glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
-
-    // finally, upload the texture to the GPU
+    // upload the texture to the GPU
     // Note: The function glTexImage2D(...) is how texture data is sent to the GPU.  The 
     // documentation (http://docs.gl/gl4/glTexImage2D) specifies what the individual arguments 
     // mean.  
@@ -225,7 +159,7 @@ GLuint CreateTexture()
     GLint level = 0;
     GLenum type = GL_FLOAT;
     GLenum format = GL_RGBA;            // texel data provided as 4-float sets
-    GLint internalFormat = GL_RGBA;     // store the texel as 4-float sets
+    GLint internalFormat = GL_RGBA;     // store the texel data in the same way
     GLsizei width = TEXELS_PER_ROW;
     GLsizei height = MAX_TEXEL_ROWS;
     GLint border = 0;                   // documentation says 0 (must be legacy)
@@ -238,50 +172,36 @@ GLuint CreateTexture()
     return textureId;
 }
 
+/*-----------------------------------------------------------------------------------------------
+Description:
+    Encapsulates the creation of a texture sampler (texture parameters).  All the textures in 
+    this barebones project are the same, so only a single sampler is required, hence the small
+    function and the "generic" in its name.
 
+    A sampler is an encapsulation of texture parameters such that glTexParameteri(...), which 
+    only binds to the currently bound texture, doesn't have to be called every time the currently
+    bound texture unit changes.
+Parameters: None
+Returns:
+    The OpenGL ID of the sampler that was created.
+Exception:  Safe
+Creator:    John Cox (6-24-2016)
+-----------------------------------------------------------------------------------------------*/
+GLuint CreateGenericSampler()
+{
+    GLuint samplerId;
+    glGenSamplers(1, &samplerId);
 
-//
-//struct texel
-//{
-//    GLfloat r;
-//    GLfloat g;
-//    GLfloat b;
-//    GLfloat a;  // alpha
-//};
-//
-//// works
-//struct StopBeingDumb
-//{
-//    std::vector<texel> _allTheTexels;
-//};
-//
-//// also works
-//typedef std::vector<texel> MaybeNotSoDumb;
-//
-//// does not work
-////#define Dumb std::vector<texel>
-//
-//static void GenerateThreeBeamTexture(StopBeingDumb *putDataHere,
-//    const unsigned int maxTexelRows, const unsigned int texelsPerRow)
-//{
-//    // stuff that fills out putDataHere
-//}
-//
-//
-//GLuint CreateTexture()
-//{
-//    // stuff
-//
-//    // glTexImage2D(...) will take a pointer to the data, but not a pointer to pointer, so 2D
-//    // arrays are not an option and the 2D texture data must be crammed into a 1D array
-//    const unsigned int MAX_TEXEL_ROWS = 64;
-//    const unsigned int TEXELS_PER_ROW = 64;
-//    NotSoDumb crude2DTextureIn1D;
-//    //crude2DTextureIn1D._allTheTexels.resize(MAX_TEXEL_ROWS * TEXELS_PER_ROW);
-//    GenerateThreeBeamTexture(&crude2DTextureIn1D, MAX_TEXEL_ROWS, TEXELS_PER_ROW);
-//
-//    // more stuff
-//
-//    // give back a handle to what was created
-//    return textureId;
-//}
+    // these are some kind of standard texture settings for how to magnify it (detail when 
+    // zooming in), "minify" it (detail when zooming out), and set tiling.
+    // Note: I don't know how these work or what they do in detail, but they seem to be common
+    // in a few texture tutorials.
+    //??why wouldn't the program work at all without the "min filter"? it'll work without the
+    // other glTexParameteri(...) settings, but not without the "min filter"??
+    glSamplerParameteri(samplerId, GL_TEXTURE_WRAP_S, GL_REPEAT);   // "S" is texture X axis
+    glSamplerParameteri(samplerId, GL_TEXTURE_WRAP_T, GL_REPEAT);   // "T" is texture Y axis
+    glSamplerParameteri(samplerId, GL_TEXTURE_MAG_FILTER, GL_LINEAR);   // "zoom in"
+    glSamplerParameteri(samplerId, GL_TEXTURE_MIN_FILTER, GL_LINEAR);   // "zoom out"
+
+    return samplerId;
+}

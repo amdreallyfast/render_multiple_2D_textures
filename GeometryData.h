@@ -10,6 +10,12 @@ struct MyVertex
     glm::vec2 _texturePosition;
 };
 
+/*-----------------------------------------------------------------------------------------------
+Description:
+    Stores all info necessary to draw a chunk of vertices and access the info later if 
+    neccessary.
+Creator:    John Cox (6-12-2016)
+-----------------------------------------------------------------------------------------------*/
 struct GeometryData
 {
     GeometryData() :
